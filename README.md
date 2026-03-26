@@ -153,16 +153,3 @@ crime-ai-system/
 
 🟡 Phase: Planning (Step 1 Completed)
 🔜 Next: Project Setup & Environment Configuration
-
----
-
-## 👨‍💻 Contributors
-
-* Shivam Sharma
-* Team Members
-
----
-
-## ⭐ Note
-
-This project is being developed as a **final year B.Tech project** and will be updated step-by-step with complete implementation.
