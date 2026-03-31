@@ -16,7 +16,7 @@ def predict():
     result = predict_crime({
         "location": location,
         "time": time,
-        # "victim_age": data.get("victim_age", 0),
+        "victim_age": data.get("victim_age", 0),
         "victim_gender": data.get("victim_gender", "Unknown"),
         "weapon_used": data.get("weapon_used", "Unknown"),
         "crime_domain": data.get("crime_domain", "Unknown"),
