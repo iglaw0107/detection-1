@@ -50,6 +50,9 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    user.lastLogin = new Date();
+    await user.save();
+
     const token = generateToken(user._id.toString(), user.role)
     res.json({
       success:true,
@@ -61,8 +64,7 @@ export const loginUser = async (req: Request, res: Response) => {
         role: user.role,
       }
       });
-    user.lastLogin = new Date();
-    await user.save();
+    
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
@@ -114,7 +116,7 @@ export const getUserById = async function (req, res) {
       
       const user = await User.findById(id).select("-password");
 
-      if(!User) return res.status(404).json({ success:false, msg:"User not Found"});
+      if(!user) return res.status(404).json({ success:false, msg:"User not Found"});
 
       res.status(200).json({
         success:true,

@@ -1,57 +1,28 @@
+# ai-model/predict.py
 import pickle
 import pandas as pd
 from utils.preprocess import preprocess_data
 
+MODEL_PATH = "models/crime_model.pkl"
 
-with open("models/crime_model.pkl", "rb") as f:
+with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
 
-# def predict_crime(input_data):
-#     df = pd.DataFrame([input_data])
+def predict_crime(input_data: dict) -> dict:
+    data = dict(input_data)  # copy to avoid mutating original
 
-    
-#     # df['date'] = "2025-01-01"
+    # Normalize key names
+    if 'location' in data:
+        data['city'] = data.pop('location')
+    if 'time' in data and 'time_of_occurrence' not in data:
+        data['time_of_occurrence'] = data.pop('time')
+    elif 'time_of_occurrence' not in data:
+        data['time_of_occurrence'] = "00:00"
 
-#     df = preprocess_data(df)
-
-    
-#     expected_columns = model.feature_names_in_
-
-#     for col in expected_columns:
-#         if col not in df.columns:
-#             df[col] = 0
-
-#     df = df[expected_columns]
-
-#     prediction = model.predict(df)[0]
-#     probabilities = model.predict_proba(df).max()
-
-    
-#     if probabilities > 0.7:
-#         risk = "HIGH"
-#     elif probabilities > 0.4:
-#         risk = "MEDIUM"
-#     else:
-#         risk = "LOW"
-
-#     return {
-#         "predicted_crime": prediction,
-#         "probability": float(probabilities),
-#         "risk_level": risk
-#     }
-
-
-def predict_crime(input_data):
-    if 'location' in input_data:
-        input_data['city'] = input_data.pop('location')
-    if 'time' in input_data:
-        input_data['time_of_occurrence'] = input_data.pop('time')
-    else:
-        input_data['time_of_occurrence'] = "00:00"
-
-    df = pd.DataFrame([input_data])
+    df = pd.DataFrame([data])
     df = preprocess_data(df)
 
+    # Align columns with training features
     expected_columns = model.feature_names_in_
     for col in expected_columns:
         if col not in df.columns:
@@ -77,9 +48,8 @@ def predict_crime(input_data):
         "risk_level": risk,
         "recommendation": recommendation,
         "input_summary": {
-            "location": input_data.get("city", "Unknown"),
-            "time": input_data.get("time_of_occurrence", "Unknown"),
-            # "victim_age": input_data.get("victim_age", "Not provided"),
-            "weapon_used": input_data.get("weapon_used", "Not provided")
+            "location": data.get("city", "Unknown"),
+            "time": data.get("time_of_occurrence", "Unknown"),
+            "weapon_used": data.get("weapon_used", "Not provided")
         }
     }
