@@ -3,7 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { AppError } from '../middleware/error.middleware';
 import Camera from '../models/camera.model';
 
-// ─── GET /cameras ────────────────────────────────────────────────
+// GET /cameras
 export const getAllCameras = async (
   req: AuthRequest,
   res: Response,
@@ -37,7 +37,7 @@ export const getAllCameras = async (
   }
 };
 
-// ─── GET /cameras/:id ────────────────────────────────────────────
+// GET /cameras/:id 
 export const getCameraById = async (
   req: AuthRequest,
   res: Response,
@@ -57,7 +57,7 @@ export const getCameraById = async (
   }
 };
 
-// ─── POST /cameras ───────────────────────────────────────────────
+// ─── POST /cameras 
 export const createCamera = async (
   req: AuthRequest,
   res: Response,
@@ -106,7 +106,7 @@ export const createCamera = async (
   }
 };
 
-// ─── PATCH /cameras/:id/status ───────────────────────────────────
+// PATCH /cameras/:id/status 
 export const updateCameraStatus = async (
   req: AuthRequest,
   res: Response,
@@ -144,7 +144,7 @@ export const updateCameraStatus = async (
   }
 };
 
-// ─── PATCH /cameras/:id ──────────────────────────────────────────
+//PATCH /cameras/:id 
 export const updateCamera = async (
   req: AuthRequest,
   res: Response,
@@ -184,7 +184,7 @@ export const updateCamera = async (
   }
 };
 
-// ─── DELETE /cameras/:id ─────────────────────────────────────────
+//  DELETE /cameras/:id 
 export const deleteCamera = async (
   req: AuthRequest,
   res: Response,
@@ -207,7 +207,7 @@ export const deleteCamera = async (
   }
 };
 
-// ─── GET /cameras/stats ──────────────────────────────────────────
+// GET /cameras/stats
 export const getCameraStats = async (
   req: AuthRequest,
   res: Response,
