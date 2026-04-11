@@ -5,7 +5,8 @@ import {
   getUsers,
   getUser,
   getUserById,
-  updateUser
+  updateUser,
+  deleteUser
 } from "../controllers/auth.controller";
 import { protect } from "../middleware/auth.middleware";
 import { authorizeRoles } from "../middleware/role.middleware";

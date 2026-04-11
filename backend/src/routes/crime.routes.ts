@@ -35,14 +35,17 @@ const upload = multer({
 
 const router = Router();
 
-// Stats — must come BEFORE /:id to avoid route conflict
-router.get('/stats',   protect, getCrimeStats);
+// ── All specific named routes FIRST ────────────────
 
-// Main CRUD
-router.get('/',        protect, getAllCrimes);
-router.get('/:id',     protect, getCrimeById);
+// Stats
+router.get('/stats', protect, getCrimeStats);
 
-// Detection — police + admin
+// AI analysis routes
+router.get('/hotspots', protect, getCrimeHotspots);
+router.get('/trends', protect, getCrimeTrends);
+router.get('/area-risk', protect, getCrimeAreaRisk);
+
+// Detection & manual entry
 router.post(
   '/detect',
   protect,
@@ -51,7 +54,6 @@ router.post(
   detectCrime
 );
 
-// Manual entry — police + admin
 router.post(
   '/manual',
   protect,
@@ -59,20 +61,10 @@ router.post(
   createManualCrime
 );
 
-router.get('/hotspots', protect, getCrimeHotspots);
-router.get('/trends',   protect, getCrimeTrends);
-// router.get('/hotspots', protect, getCrimeHotspots);
+// ── Generic routes AFTER named routes ──────────────
+router.get('/', protect, getAllCrimes);
+router.get('/:id', protect, getCrimeById); // ✅ now safe
 
-
-router.get('/area-risk', protect, getCrimeAreaRisk);
-// router.get('/trends',    protect, getCrimeTrends);
-// router.get('/hotspots',  protect, getCrimeHotspots);
-
-// Save / unsave as case
-router.patch('/:id/save',   protect, authorize('admin', 'police'), saveCrime);
-// router.patch('/:id/unsave', protect, authorize('admin', 'police'), unsaveCrime);
-
-// Delete — admin only
+// ── Sub-resource routes ────────────────────────────
+router.patch('/:id/save', protect, authorize('admin', 'police'), saveCrime);
 router.delete('/:id', protect, authorize('admin'), deleteCrime);
-
-export default router;
