@@ -7,11 +7,8 @@ export default function Signup() {
   const { signup } = useAuth(); // make sure this exists
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,7 +23,7 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      await signup(form.email, form.password);
+      await signup(form.name, form.email, form.password);
       navigate("/dashboard");
     } catch (err) {
       setError("Failed to create account");
@@ -70,6 +67,17 @@ export default function Signup() {
               {error}
             </p>
           )}
+          <div className="mb-4">
+            <label className="text-xs text-gray-400 mb-1 block">Name</label>
+            <input
+              type="text"
+              required
+              placeholder="Your name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-4 py-3 rounded-lg bg-[#0f0f17] border border-white/10 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+            />
+          </div>
 
           {/* Email */}
           <div className="mb-4">

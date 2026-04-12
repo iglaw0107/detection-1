@@ -7,7 +7,24 @@ export default function Alerts() {
   const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
-    getAlerts().then((res) => setAlerts(res.data));
+    getAlerts()
+      .then((res) => {
+        const data = res?.data;
+
+        // ✅ normalize response safely
+        if (Array.isArray(data)) {
+          setAlerts(data);
+        } else if (Array.isArray(data?.data)) {
+          setAlerts(data.data);
+        } else if (Array.isArray(data?.alerts)) {
+          setAlerts(data.alerts);
+        } else {
+          setAlerts([]); // fallback
+        }
+      })
+      .catch(() => {
+        setAlerts([]); // prevent crash
+      });
   }, []);
 
   return (
@@ -21,15 +38,16 @@ export default function Alerts() {
           </tr>
         </thead>
         <tbody>
-          {alerts.map((a) => (
-            <tr key={a._id} className="border-t border-white/10">
-              <td>{a.type}</td>
-              <td>
-                <Badge variant="danger">{a.severity}</Badge>
-              </td>
-              <td>{a.status}</td>
-            </tr>
-          ))}
+          {Array.isArray(alerts) &&
+            alerts.map((a) => (
+              <tr key={a._id} className="border-t border-white/10">
+                <td>{a.type}</td>
+                <td>
+                  <Badge variant="danger">{a.severity}</Badge>
+                </td>
+                <td>{a.status}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </DashboardLayout>

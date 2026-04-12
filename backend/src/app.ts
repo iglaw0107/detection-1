@@ -19,7 +19,7 @@ app.use(express.json());
 
 
 
-app.use("/api", authRoutes);
+app.use("/api/v1", authRoutes);
 // app.use("/api", predictionRoute);
 
 app.use('/api/v1/cameras', cameraRoutes);

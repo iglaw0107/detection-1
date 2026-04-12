@@ -68,3 +68,7 @@ router.get('/:id', protect, getCrimeById); // ✅ now safe
 // ── Sub-resource routes ────────────────────────────
 router.patch('/:id/save', protect, authorize('admin', 'police'), saveCrime);
 router.delete('/:id', protect, authorize('admin'), deleteCrime);
+
+
+
+export default router;

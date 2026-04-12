@@ -7,7 +7,24 @@ export default function Crimes() {
   const [crimes, setCrimes] = useState([]);
 
   useEffect(() => {
-    getCrimes().then((res) => setCrimes(res.data));
+    getCrimes()
+      .then((res) => {
+        const data = res?.data;
+
+        // ✅ normalize response safely
+        if (Array.isArray(data)) {
+          setCrimes(data);
+        } else if (Array.isArray(data?.data)) {
+          setCrimes(data.data);
+        } else if (Array.isArray(data?.crimes)) {
+          setCrimes(data.crimes);
+        } else {
+          setCrimes([]); // fallback
+        }
+      })
+      .catch(() => {
+        setCrimes([]); // prevent crash
+      });
   }, []);
 
   return (
@@ -21,15 +38,16 @@ export default function Crimes() {
           </tr>
         </thead>
         <tbody>
-          {crimes.map((c) => (
-            <tr key={c._id} className="border-t border-white/10">
-              <td>{c.type}</td>
-              <td>
-                <Badge variant="danger">{c.severity}</Badge>
-              </td>
-              <td>{c.status}</td>
-            </tr>
-          ))}
+          {Array.isArray(crimes) &&
+            crimes.map((c) => (
+              <tr key={c._id} className="border-t border-white/10">
+                <td>{c.type}</td>
+                <td>
+                  <Badge variant="danger">{c.severity}</Badge>
+                </td>
+                <td>{c.status}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </DashboardLayout>
