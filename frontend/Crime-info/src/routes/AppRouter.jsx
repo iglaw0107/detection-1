@@ -11,7 +11,9 @@ import Users from "../pages/Users";
 import Profile from "../pages/Profile";
 import { useAuth } from "../context/AuthContext";
 import Signup from "../pages/Signup";
-import CrimeAI from "../pages/crimeAi";
+// import CrimeAI from "../pages/crimeAi";
+import CrimeAI from "../pages/CrimeAI2"
+import CrimeGlobe from "../components/layout/CrimeGlobe";
 
 function Private({ children }) {
   const { user } = useAuth();
@@ -44,6 +46,7 @@ export default function AppRouter() {
       <Route path="/alerts" element={<Private><Alerts /></Private>} />
       <Route path="/users" element={<Private><Users /></Private>} />
       <Route path="/profile" element={<Private><Profile /></Private>} />
+      <Route path="/globe" element={<CrimeGlobe />} />
 
       <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
