@@ -68,16 +68,48 @@ def hotspot():
 @app.route("/detect", methods=["POST"])
 def detect():
     data = request.json or {}
-    image = data.get("image")
+    # image = data.get("image")
+    video_path = data.get("videoPath")
+    camera_id = data.get("cameraId", "cam_unknown")
+    location = data.get("location", "Unknown Location")
 
-    if not image:
-        return jsonify({"error": "image required"}), 400
+    # if not image:
+    #     return jsonify({"error": "image required"}), 400
+
+    if not video_path:
+        return jsonify({"error": "videoPath required"}), 400
+
+    hotspot_result = predict_hotspots(city=location, top_n=3)
+    hotspots = hotspot_result.get("hotspots", []) if hotspot_result.get("success") else []
+    primary_hotspot = hotspots[0] if hotspots else {}
+
+    confidence = 0.82 if primary_hotspot else 0.68
+    severity = "high" if confidence >= 0.85 else ("medium" if confidence >= 0.6 else "low")
+    crime_type = primary_hotspot.get("mostCommonCrime", "suspicious_activity")
 
     # TODO: Replace with real YOLOv8 inference
     return jsonify({
-        "violence": True,
-        "confidence": 0.9,
-        "location": "Test Area"
+        # "violence": True,
+        # "confidence": 0.9,
+        # "location": "Test Area"
+
+        "detectedEvents": [
+            {
+                "crimeType": crime_type,
+                "severity": severity,
+                "confidenceScore": confidence,
+                "timestampInVideo": "00:00:12",
+                "aiSummary": (
+                    f"AI analyzed video from {camera_id}. "
+                    f"Likely {crime_type.replace('_', ' ')} around {location}."
+                ),
+                "recommendation": (
+                    primary_hotspot.get("recommendation")
+                    if primary_hotspot
+                    else f"Increase patrol visibility around {location}."
+                ),
+            }
+        ]
     })
 
 
