@@ -1,12 +1,10 @@
-import { useState } from 'react'
-
 import './App.css'
 import DashboardLayout from './components/layout/DashboardLayout'
 
 function App() {
+  return (<>
   
-
-  return (<div />)
+  </>)
 }
 
 export default App
