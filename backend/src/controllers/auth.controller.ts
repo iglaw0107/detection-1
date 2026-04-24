@@ -14,7 +14,7 @@ export const registerUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
