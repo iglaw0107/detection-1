@@ -15,16 +15,7 @@ export const setupSocket = (io: Server) => {
 
     socket.on("frame", async ({ image, cameraId }) => {
       try {
-        const res = await axios.post(`${AI_URL}/detect`, {
-          image,
-        });
-
-        const result = res.data;
-
-        // Ignore low confidence
-        if (!result.violence || result.confidence < 0.6) {
-          return;
-        }
+        
 
         // Prevent spam — 1 alert per 10 seconds per camera
         const now = Date.now();
@@ -38,6 +29,19 @@ export const setupSocket = (io: Server) => {
 
         // Get camera location
         const camera = await Camera.findOne({ cameraId });
+
+        const res = await axios.post(`${AI_URL}/detect`, {
+          videoPath: "live_stream",  // was: image
+          cameraId,
+          location: camera?.location || "Unknown",
+        });
+
+        const result = res.data;
+
+        // Ignore low confidence
+        if (!result.violence || result.confidence < 0.6) {
+          return;
+        }
 
         const severity =
           result.confidence > 0.8

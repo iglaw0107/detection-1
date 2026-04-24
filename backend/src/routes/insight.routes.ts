@@ -1,9 +1,9 @@
 import express from "express";
-import { preditionCrime } from "../controllers/predict.controller";
+import { getInsights } from "../controllers/insight.controller";
 import { protect } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
-router.post("/crimes/predict-direct", protect, preditionCrime);
+router.get("/", getInsights);
 
 export default router;

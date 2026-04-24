@@ -130,6 +130,8 @@ export const detectCrime = async (
   try {
     const { cameraId, location } = req.body;
     const  file  = req.file;
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
 
     const camera = await Camera.findOne({ cameraId });
     if (!camera) return next(new AppError(`Camera '${cameraId}' not found`, 404));
@@ -235,8 +237,17 @@ export const createManualCrime = async (
       severity, date, time, description,
     } = req.body;
 
-    const camera = await Camera.findOne({ cameraId });
-    if (!camera) return next(new AppError(`Camera '${cameraId}' not found`, 404));
+    let camera = await Camera.findOne({ cameraId });
+
+      // ✅ Auto-create camera if not exists
+      if (!camera) {
+        camera = await Camera.create({
+          cameraId: cameraId || "CAM_DEFAULT",
+          location: location || "Unknown",
+          ipAddress: "0.0.0.0",
+          installationDate: new Date(),
+        });
+      }
 
     const crime = await CrimeEvent.create({
       crimeId:     `crm_${uuidv4().split('-')[0]}`,
@@ -327,6 +338,7 @@ export const getCrimeHotspots = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log("🔥 AI URL:", process.env.AI_MODEL_URL);
     const city  = req.query.city  as string | undefined;
     const topN  = req.query.topN  ? parseInt(req.query.topN as string) : 5;
 
@@ -358,6 +370,7 @@ export const getCrimeTrends = async (
       startDate,
       endDate,
     } = req.query;
+    
 
     const result = await analyzeTrends({
       groupBy:   groupBy   as string,
