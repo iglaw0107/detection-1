@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from utils.data_loader import get_dataset
 
 # ─────────────────────────────────────────────────────────────────
 #  Crime Trend Analysis
@@ -20,7 +21,9 @@ DATASET_PATH = os.path.join(
 
 def load_dataset() -> pd.DataFrame:
     """Load and clean the crime dataset."""
-    df = pd.read_csv(DATASET_PATH, skipinitialspace=True)
+    # df = pd.read_csv(DATASET_PATH, skipinitialspace=True)
+
+    df = get_dataset()
 
     # Clean column names — same as train.py
     df.columns = (

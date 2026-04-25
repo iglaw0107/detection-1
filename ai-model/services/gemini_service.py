@@ -1,79 +1,87 @@
-import google.generativeai as genai
 import os
-from dotenv import load_dotenv
+import requests
 
-load_dotenv()
-
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 def generate_crime_summary(data: dict) -> str:
-    """
-    Called after ML model prediction.
-    Returns a natural language summary for police officers.
-    """
-    try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
 
-        prompt = f"""
-        You are a police crime analysis assistant in India.
-        Write a 2-3 sentence professional summary for a police officer.
-        Be direct, factual, and concise. No bullet points or formatting.
+    prompt = f"""
+        You are a crime analysis AI.
 
-        Crime Details:
-        - Predicted Crime Type : {data.get("predicted_crime", "Unknown")}
-        - Risk Level           : {data.get("risk_level", "Unknown")}
-        - Confidence           : {round(data.get("probability", 0) * 100, 1)}%
-        - Location             : {data.get("location", "Unknown")}
-        - Time                 : {data.get("time", "Unknown")}
-        - Weapon Used          : {data.get("weapon_used", "Unknown")}
+        Analyze the data and generate a realistic crime risk summary.
+
+        DATA:
+        Location: {data.get("location")}
+        Crime Type: {data.get("predicted_crime")}
+        Risk Level: {data.get("risk_level")}
+        Probability: {data.get("probability")}
+        Time: {data.get("time")}
+        Weapon: {data.get("weapon_used")}
+
+        RULES:
+        - Do NOT invent new facts
+        - Do NOT assume crimes happened
+        - Only describe risk and patterns
+        - Keep it realistic and analytical
+        - Mention possible reasons (time, area, behavior)
+        - Give a short recommendation
+
+        OUTPUT:
         """
 
-        response = model.generate_content(prompt)
-        return response.text.strip()
-
-    except Exception as e:
-        print(f"[Gemini Error]: {e}")
-        # Safe fallback if Gemini API fails
-        return (
-            f"{data.get('predicted_crime', 'Crime')} risk detected at "
-            f"{data.get('location', 'unknown location')} "
-            f"at {data.get('time', 'unknown time')}. "
-            f"Risk level: {data.get('risk_level', 'UNKNOWN')}. "
-            f"Confidence: {round(data.get('probability', 0) * 100, 1)}%."
-        )
-
-
-def generate_alert_message(data: dict) -> str:
-    """
-    Called when a crime event triggers an alert.
-    Returns a short urgent message for the alert notification.
-    """
+    # ───────────── GEMINI FIRST ─────────────
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
 
-        prompt = f"""
-        You are an emergency alert system for police in India.
-        Write ONE short urgent alert message (max 2 sentences) 
-        for a police officer about this crime event.
-        Be urgent, clear, and actionable.
+        res = requests.post(
+            f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+            json={
+                "contents": [{"parts": [{"text": prompt}]}]
+            },
+            timeout=10
+        )
 
-        Crime Event:
-        - Crime Type : {data.get("crimeType", "Unknown")}
-        - Severity   : {data.get("severity", "Unknown")}
-        - Location   : {data.get("location", "Unknown")}
-        - Camera ID  : {data.get("cameraId", "Unknown")}
+        data_json = res.json()
+        print("🔵 Gemini Response:", res.text)
 
-        Respond with only the alert message text.
-        """
-
-        response = model.generate_content(prompt)
-        return response.text.strip()
+        if "candidates" in data_json:
+            return data_json["candidates"][0]["content"]["parts"][0]["text"]
 
     except Exception as e:
-        print(f"[Gemini Alert Error]: {e}")
-        return (
-            f"ALERT: {data.get('severity', '').upper()} severity "
-            f"{data.get('crimeType', 'crime')} detected at "
-            f"{data.get('location', 'unknown location')}. "
-            f"Immediate attention required."
+        print("Gemini failed:", e)
+
+    # ───────────── FALLBACK: OPENROUTER ─────────────
+    try:
+        res = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "openai/gpt-3.5-turbo",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ]
+            },
+            timeout=10
         )
+
+        data_json = res.json()
+        print("🟢 OpenRouter Response:", res.text)
+
+        if "choices" in data_json:
+            return data_json["choices"][0]["message"]["content"]
+
+        print("OpenRouter error:", data_json)
+
+    except Exception as e:
+        print("OpenRouter failed:", e)
+
+    # ───────────── FINAL FALLBACK ─────────────
+    return (
+        f"{data.get('predicted_crime', 'Crime')} risk detected in "
+        f"{data.get('location', 'this area')}. "
+        f"Stay cautious."
+    )
