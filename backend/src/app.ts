@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/auth.routes";
 import cameraRoutes from "./routes/camera.routes";
 import crimeRoutes from "./routes/crime.routes";
@@ -9,6 +10,9 @@ import { errorHandler } from "./middleware/error.middleware";
 import predictRoutes from './routes/predict.routes';
 import insightRoutes from "./routes/insight.routes";
 import path from "path";
+import publicRoutes from "./routes/public.routes";
+import historyRoutes from "./routes/history.routes";
+import analyticsRoutes from "./routes/analytics.routes";
 
 dotenv.config();
 
@@ -31,6 +35,17 @@ app.use(
   })
 );
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 100, // max 100 requests per IP
+  message: {
+    success: false,
+    message: "Too many requests, please try again later",
+  },
+});
+
+app.use("/api/v1/public", limiter);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -50,6 +65,9 @@ app.use("/api/v1/crimes", crimeRoutes);
 app.use("/api/v1/alerts", alertRoutes);
 app.use("/api/v1", predictRoutes);
 app.use("/api/v1/insights", insightRoutes);
+app.use("/api/v1/public", publicRoutes);
+app.use("/api/v1/history", historyRoutes);
+app.use("/api/v1/analytics", analyticsRoutes);
 
 app.use(
   "/uploads",

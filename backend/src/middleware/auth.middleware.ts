@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+// ✅ JWT Payload Type
 export interface JwtPayload {
   userId: string;
   role: "admin" | "police";
@@ -9,17 +10,14 @@ export interface JwtPayload {
   exp?: number;
 }
 
-export interface AuthRequest extends Request {
-  user?: JwtPayload;
-}
-
 // ✅ Type guard
 function isJwtPayload(obj: any): obj is JwtPayload {
   return obj && typeof obj.userId === "string" && typeof obj.role === "string";
 }
 
+// 🔐 PROTECT MIDDLEWARE
 export const protect = (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): void => {
@@ -36,24 +34,17 @@ export const protect = (
 
     const token = authHeader.split(" ")[1];
 
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET not set");
-    }
-
     const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error("JWT_SECRET not set");
 
-    if (!secret) {
-      throw new Error("JWT_SECRET not set");
-    }
+    const decoded = jwt.verify(token as string, secret);
 
-    const decoded = jwt.verify(token as string, secret as string);
-
-    // ✅ SAFE CHECK
     if (!isJwtPayload(decoded)) {
       throw new Error("Invalid token structure");
     }
 
-    req.user = decoded;
+    // 🔥 IMPORTANT FIX
+    (req as any).user = decoded;
 
     next();
   } catch (error) {
@@ -64,10 +55,12 @@ export const protect = (
   }
 };
 
-// ✅ Role middleware (same as before)
+// 🔐 ROLE AUTHORIZATION
 export const authorize = (...roles: ("admin" | "police")[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.user) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = (req as any).user;
+
+    if (!user) {
       res.status(401).json({
         success: false,
         message: "Unauthorized",
@@ -75,10 +68,10 @@ export const authorize = (...roles: ("admin" | "police")[]) => {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(user.role)) {
       res.status(403).json({
         success: false,
-        message: `Role '${req.user.role}' is not allowed`,
+        message: `Role '${user.role}' is not allowed`,
       });
       return;
     }

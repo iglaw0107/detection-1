@@ -1,32 +1,56 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export type CrimeType =
-  | 'theft'
-  | 'violence'
-  | 'trespassing'
-  | 'vandalism'
-  | 'suspicious'
-  | 'robbery'
-  | 'assault';
+  | "theft"
+  | "violence"
+  | "trespassing"
+  | "vandalism"
+  | "suspicious"
+  | "robbery"
+  | "assault"
+  | "unknown"; // 🔥 added for prediction fallback
 
-export type Severity = 'low' | 'medium' | 'high';
+export type Severity = "low" | "medium" | "high";
 
 export interface ICrimeEvent extends Document {
+  // 🔹 SYSTEM
   crimeId: string;
-  cameraId: string;
+
+  // 🔹 USER (NEW)
+  userId?: string;
+
+  // 🔹 CAMERA (OPTIONAL NOW)
+  cameraId?: string;
+
+  // 🔹 COMMON
   location: string;
-  crimeType: CrimeType;
-  severity: Severity;
-  confidenceScore: number;
+
+  // 🔹 AI OUTPUT (NEW)
+  predictedCrime?: CrimeType;
+  riskLevel?: Severity;
+
+  // 🔹 DETECTION (OPTIONAL)
+  crimeType?: CrimeType;
+  severity?: Severity;
+  confidenceScore?: number;
+
+  // 🔹 TIME
   date: string;
   time: string;
+
+  // 🔹 MEDIA
   videoClipUrl?: string;
   thumbnailUrl?: string;
+
+  // 🔹 AI
   aiSummary?: string;
+
+  // 🔹 EXTRA
   tags: string[];
   isSaved: boolean;
   savedBy?: string;
   savedRemarks?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,48 +63,88 @@ const CrimeSchema = new Schema<ICrimeEvent>(
       unique: true,
       trim: true,
     },
+
+    // 🔥 NEW (USER SUPPORT)
+    userId: {
+      type: String,
+    },
+
     cameraId: {
       type: String,
-      required: [true, 'Camera ID is required'],
-      trim: true,
     },
+
     location: {
       type: String,
-      required: [true, 'Location is required'],
+      required: [true, "Location is required"],
       trim: true,
     },
+
+    // 🔥 NEW (AI PREDICTION)
+    predictedCrime: {
+      type: String,
+      enum: [
+        "theft",
+        "violence",
+        "trespassing",
+        "vandalism",
+        "suspicious",
+        "robbery",
+        "assault",
+        "unknown",
+      ],
+    },
+
+    riskLevel: {
+      type: String,
+      enum: ["low", "medium", "high"],
+    },
+
+    // 🔹 DETECTION (optional)
     crimeType: {
       type: String,
-      enum: ['theft','violence','trespassing','vandalism','suspicious','robbery','assault'],
-      required: [true, 'Crime type is required'],
+      enum: [
+        "theft",
+        "violence",
+        "trespassing",
+        "vandalism",
+        "suspicious",
+        "robbery",
+        "assault",
+      ],
     },
+
     severity: {
       type: String,
-      enum: ['low', 'medium', 'high'],
-      required: [true, 'Severity is required'],
+      enum: ["low", "medium", "high"],
     },
+
     confidenceScore: {
       type: Number,
-      required: [true, 'Confidence score is required'],
-      min: [0, 'Score must be >= 0'],
-      max: [1, 'Score must be <= 1'],
+      min: 0,
+      max: 1,
     },
+
     date: {
       type: String,
-      required: [true, 'Date is required'],
+      required: true,
     },
+
     time: {
       type: String,
-      required: [true, 'Time is required'],
+      required: true,
     },
-    videoClipUrl: { type: String },
-    thumbnailUrl:  { type: String },
-    aiSummary:     { type: String },
-    tags:          { type: [String], default: [] },
-    isSaved:       { type: Boolean, default: false },
-    savedBy:       { type: String },
-    savedRemarks:  { type: String },
 
+    videoClipUrl: { type: String },
+    thumbnailUrl: { type: String },
+
+    aiSummary: { type: String },
+
+    tags: { type: [String], default: [] },
+
+    isSaved: { type: Boolean, default: false },
+
+    savedBy: { type: String },
+    savedRemarks: { type: String },
   },
   {
     timestamps: true,
@@ -88,9 +152,11 @@ const CrimeSchema = new Schema<ICrimeEvent>(
   }
 );
 
-// Index for fast filtering
+// 🔥 INDEXES
 CrimeSchema.index({ crimeType: 1, severity: 1, date: -1 });
+CrimeSchema.index({ predictedCrime: 1, riskLevel: 1 });
 CrimeSchema.index({ cameraId: 1 });
-CrimeSchema.index({ location: 'text' });
+CrimeSchema.index({ userId: 1 }); // 🔥 NEW
+CrimeSchema.index({ location: "text" });
 
-export default mongoose.model<ICrimeEvent>('CrimeEvent', CrimeSchema);
+export default mongoose.model<ICrimeEvent>("CrimeEvent", CrimeSchema);

@@ -4,8 +4,7 @@ import Alert from "../models/alert.model";
 import Camera from "../models/camera.model";
 import { v4 as uuidv4 } from "uuid";
 
-// ✅ Use env variable — no more hardcoded localhost
-const AI_URL = process.env.AI_MODEL_URL || "http://localhost:5001";
+const AI_URL = process.env.AI_SERVICE_URL || "http://localhost:10000";
 
 const lastAlertTime: Record<string, number> = {};
 
@@ -13,12 +12,11 @@ export const setupSocket = (io: Server) => {
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
 
-    socket.on("frame", async ({ image, cameraId }) => {
+    socket.on("frame", async ({ cameraId }) => {
       try {
-        
-
-        // Prevent spam — 1 alert per 10 seconds per camera
         const now = Date.now();
+
+        // 🔥 Anti-spam (10 sec per camera)
         if (
           lastAlertTime[cameraId] &&
           now - lastAlertTime[cameraId] < 10000
@@ -27,26 +25,31 @@ export const setupSocket = (io: Server) => {
         }
         lastAlertTime[cameraId] = now;
 
-        // Get camera location
+        // 📍 Get camera info
         const camera = await Camera.findOne({ cameraId });
 
-        const res = await axios.post(`${AI_URL}/detect`, {
-          videoPath: "live_stream",  // was: image
-          cameraId,
-          location: camera?.location || "Unknown",
-        });
+        const location = camera?.location || "Unknown";
+
+        // 🔥 CALL YOUR AI MODEL (UPDATED)
+        const res = await axios.post(
+          `${AI_URL}/api/v1/predict`,
+          {
+            location,
+            time: new Date().toTimeString().slice(0, 5),
+            weapon_used: "unknown",
+          },
+          { timeout: 10000 }
+        );
 
         const result = res.data;
 
-        // Ignore low confidence
-        if (!result.violence || result.confidence < 0.6) {
-          return;
-        }
+        // ❗ Ignore low-risk alerts
+        if (result.risk_level === "LOW") return;
 
         const severity =
-          result.confidence > 0.8
+          result.risk_level === "HIGH"
             ? "high"
-            : result.confidence > 0.5
+            : result.risk_level === "MEDIUM"
             ? "medium"
             : "low";
 
@@ -54,21 +57,21 @@ export const setupSocket = (io: Server) => {
           alertId: `alt_${uuidv4().split("-")[0]}`,
           crimeId: `crm_${uuidv4().split("-")[0]}`,
           cameraId,
-          location: camera?.location || "Unknown",
-          crimeType: "violence",
+          location,
+          crimeType: result.predicted_crime || "unknown",
           severity,
-          message: `Violence detected at ${camera?.location || "Unknown"}`,
+          message: result.aiSummary || "Suspicious activity detected",
           sentVia: ["websocket"],
         });
 
-        // Broadcast to all connected clients
+        // 🔥 BROADCAST TO ALL CLIENTS
         io.emit("new-alert", alert);
 
-        // Send detection result back to sender
+        // 🔥 SEND BACK TO SENDER
         socket.emit("detection", result);
 
       } catch (err: any) {
-        console.error("Socket frame processing error:", err?.message || err);
+        console.error("Socket error:", err?.message || err);
       }
     });
 

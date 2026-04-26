@@ -44,5 +44,6 @@
     "moduleResolution": "node",
     "ignoreDeprecations": "6.0",
     "esModuleInterop":true,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
   }
 }

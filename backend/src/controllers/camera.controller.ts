@@ -1,11 +1,10 @@
-import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../middleware/auth.middleware';
+import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../middleware/error.middleware';
 import Camera from '../models/camera.model';
 
 // GET /cameras
 export const getAllCameras = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -39,7 +38,7 @@ export const getAllCameras = async (
 
 // GET /cameras/:id 
 export const getCameraById = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -59,7 +58,7 @@ export const getCameraById = async (
 
 // ─── POST /cameras 
 export const createCamera = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -108,7 +107,7 @@ export const createCamera = async (
 
 // PATCH /cameras/:id/status 
 export const updateCameraStatus = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -146,7 +145,7 @@ export const updateCameraStatus = async (
 
 //PATCH /cameras/:id 
 export const updateCamera = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -186,7 +185,7 @@ export const updateCamera = async (
 
 //  DELETE /cameras/:id 
 export const deleteCamera = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -209,7 +208,7 @@ export const deleteCamera = async (
 
 // GET /cameras/stats
 export const getCameraStats = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

@@ -1,6 +1,5 @@
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from "uuid";
-import { AuthRequest } from "../middleware/auth.middleware";
 import { AppError } from "../middleware/error.middleware";
 import CrimeEvent from "../models/crime.model";
 import Camera from "../models/camera.model";
@@ -12,12 +11,15 @@ import {
 } from "../services/aiModel.service";
 import { createAlertForCrime } from "../services/alert.service";
 import { saveDetectedCrimes } from "../services/crime.service";
+import Alert from "../models/alert.model";
+
+
 
 // ─────────────────────────────
 // GET ALL CRIMES
 // ─────────────────────────────
 export const getAllCrimes = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -49,7 +51,7 @@ export const getAllCrimes = async (
 // GET CRIME BY ID
 // ─────────────────────────────
 export const getCrimeById = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -76,7 +78,7 @@ export const getCrimeById = async (
 // DETECT CRIME
 // ─────────────────────────────
 export const detectCrime = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -147,7 +149,7 @@ export const detectCrime = async (
 // MANUAL CRIME
 // ─────────────────────────────
 export const createManualCrime = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -193,7 +195,7 @@ export const createManualCrime = async (
 // DELETE CRIME
 // ─────────────────────────────
 export const deleteCrime = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -221,7 +223,7 @@ export const deleteCrime = async (
 // ─────────────────────────────
 
 export const getCrimeHotspots = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -237,7 +239,7 @@ export const getCrimeHotspots = async (
 };
 
 export const getCrimeTrends = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -253,7 +255,7 @@ export const getCrimeTrends = async (
 };
 
 export const getCrimeAreaRisk = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -265,5 +267,50 @@ export const getCrimeAreaRisk = async (
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
+  }
+};
+
+
+export const uploadCrimeVideo = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        message: "Video required",
+      });
+    }
+
+    const cameraId = req.body.cameraId || "manual";
+    const location = req.body.location || "Unknown";
+
+    const detectionResults = await runVideoDetection(
+      file.path,
+      cameraId,
+      location
+    );
+
+    const detection = detectionResults[0];
+
+    const alert = await createAlertForCrime({
+      crimeId: `vid-${Date.now()}`,
+      cameraId,
+      location,
+      crimeType: detection.crimeType || "suspicious",
+      severity: detection.severity || "medium",
+    });
+
+    res.json({
+      success: true,
+      detection,
+      alert,
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Video processing failed",
+    });
   }
 };
