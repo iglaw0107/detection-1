@@ -22,15 +22,16 @@ function ArchitectureSection() {
           </div>
           <div className="text-center md:text-left">
             <span className="font-mono font-bold tracking-wider text-3xl md:text-4xl text-white">
-                AI Engine
-              </span>
-              <p className="mt-2 text-purple-400 font-medium">
-                Crime Detection & Prediction
-              </p>
-              <p className="mt-4 text-gray-400 text-sm leading-relaxed max-w-md">
-                Our AI model analyzes video frames and structured data to detect violence,
-                predict crime risk, and generate intelligent summaries using machine learning.
-              </p>
+              AI ENGINE
+            </span>
+            <p className="mt-2 text-purple-400 font-medium">
+              Real-time Detection & Risk Prediction
+            </p>
+            <p className="mt-4 text-gray-400 text-sm leading-relaxed max-w-md">
+              Our AI model processes live camera frames and contextual inputs to detect
+              suspicious activity, classify crime types, and predict risk levels in real-time.
+              It also generates intelligent summaries to assist faster decision making.
+            </p>
           </div>
         </div>
 
@@ -47,17 +48,16 @@ function ArchitectureSection() {
           </div>
           <div className="text-center md:text-right">
             <span className="font-mono font-bold tracking-wider text-3xl md:text-4xl text-white">
-              Smart Dashboard
-            </span>
-            <div className="mt-2 flex items-center justify-center md:justify-start gap-2">
-              <span className="text-purple-400 font-medium">
-                Monitoring & Analytics
+                CONTROL PANEL
               </span>
-            </div>
-            <p className="mt-4 text-gray-400 text-sm leading-relaxed max-w-md">
-              A modern dashboard to monitor cameras, visualize crime trends,
-              manage alerts, and gain insights through AI-powered analytics.
-            </p>
+              <p className="mt-2 text-purple-400 font-medium">
+                Monitoring & Analytics Dashboard
+              </p>
+              <p className="mt-4 text-gray-400 text-sm leading-relaxed max-w-md">
+                A centralized dashboard that provides live camera feeds, real-time alerts,
+                crime trend visualization, and AI-driven insights. Designed for fast monitoring,
+                quick response, and intelligent surveillance management.
+              </p>
             {/* <p className="mt-4 text-gray-400 text-sm leading-relaxed max-w-md ml-auto">EditWizard allows you to easily modify existing smart contracts through chat or direct code edits.</p> */}
           </div>
         </div>
@@ -75,16 +75,17 @@ function ArchitectureSection() {
           </div>
           <div className="text-center md:text-left">
             <span className="font-mono font-bold tracking-wider text-3xl md:text-4xl text-white">
-              Smart Dashboard
+              REAL-TIME SYSTEM
             </span>
             <div className="mt-2 flex items-center justify-center md:justify-start gap-2">
               <span className="text-purple-400 font-medium">
-                Monitoring & Analytics
+                Backend + Socket Infrastructure
               </span>
             </div>
             <p className="mt-4 text-gray-400 text-sm leading-relaxed max-w-md">
-              A modern dashboard to monitor cameras, visualize crime trends,
-              manage alerts, and gain insights through AI-powered analytics.
+              The backend handles authentication, camera management, alert generation,
+              and analytics processing. Integrated with WebSockets, it enables real-time
+              communication between AI detection, alerts, and the dashboard for instant updates.
             </p>
           </div>
         </div>

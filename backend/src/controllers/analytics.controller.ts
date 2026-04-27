@@ -8,11 +8,9 @@ import {
 
 export const analyticsController = async (req: Request, res: Response) => {
   try {
-    // 🔥 FIXED USER ACCESS
     const user = (req as any).user;
     const userId: string | undefined = user?.userId;
 
-    // Optional: enforce auth for analytics
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -20,11 +18,14 @@ export const analyticsController = async (req: Request, res: Response) => {
       });
     }
 
+    // 🔥 NEW: GET LOCATION FROM QUERY
+    const location = req.query.location as string | undefined;
+
     const [topCrimes, trends, risk, stats] = await Promise.all([
-      getTopCrimes(userId),
-      getCrimeTrends(userId),
-      getRiskDistribution(userId),
-      getDashboardStats(userId),
+      getTopCrimes(userId, location),
+      getCrimeTrends(userId, location),
+      getRiskDistribution(userId, location),
+      getDashboardStats(userId, location),
     ]);
 
     res.json({
@@ -36,6 +37,7 @@ export const analyticsController = async (req: Request, res: Response) => {
         stats,
       },
     });
+
   } catch (error) {
     console.error("Analytics Error:", error);
     res.status(500).json({

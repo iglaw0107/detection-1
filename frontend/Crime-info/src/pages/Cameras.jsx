@@ -1,17 +1,23 @@
 import { useEffect, useState, useRef } from "react";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import { getCameras } from "../api/cameras";
+import { getCameras } from "../api/camera.api";
 import {
   getAlerts,
   resolveAlert,
   dismissAlert,
-} from "../api/alerts";
+} from "../api/alerts.api";
 import StatCard from "../components/ui/StatCard";
-import { Camera } from "lucide-react";
+import { Camera, AlertTriangle, Activity } from "lucide-react";
 import { io } from "socket.io-client";
 
-
 const socket = io("http://localhost:5000");
+
+// 🔥 USE SAFE PUBLIC VIDEOS (NO YOUTUBE ISSUES)
+const VIDEO_FEEDS = [
+  "https://www.w3schools.com/html/mov_bbb.mp4",
+  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  "https://www.w3schools.com/html/movie.mp4",
+];
 
 export default function Cameras() {
   const [cameras, setCameras] = useState([]);
@@ -22,243 +28,153 @@ export default function Cameras() {
 
   // 📸 Fetch cameras
   useEffect(() => {
-    getCameras()
-      .then((res) => {
-        const data = res?.data;
-
-        if (Array.isArray(data)) setCameras(data);
-        else if (Array.isArray(data?.data)) setCameras(data.data);
-        else if (Array.isArray(data?.cameras)) setCameras(data.cameras);
-        else setCameras([]);
-      })
-      .catch(() => setCameras([]));
+    getCameras().then((res) => {
+      const data = res?.data?.data || res?.data || [];
+      setCameras(data);
+    });
   }, []);
 
   // 🚨 Fetch alerts
   useEffect(() => {
-    getAlerts()
-      .then((res) => {
-        const data = res?.data?.data || [];
-        setAlerts(data);
-      })
-      .catch(() => setAlerts([]));
+    getAlerts().then((res) => {
+      setAlerts(res?.data?.data || []);
+    });
   }, []);
 
-  // 🚨 Live alerts
+  // 🚨 Socket alerts
   useEffect(() => {
     socket.on("new-alert", (alert) => {
-      console.log("🚨 LIVE ALERT:", alert);
-
-      setAlerts((prev) => {
-        if (prev.find((a) => a.alertId === alert.alertId)) return prev;
-        return [alert, ...prev];
-      });
+      setAlerts((prev) => [alert, ...prev]);
     });
 
     return () => socket.off("new-alert");
   }, []);
 
-  // 🎥 Send frames
-  const sendFrame = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-
-    const image = canvas.toDataURL("image/jpeg");
-
-    socket.emit("frame", {
-      image,
-      cameraId: selectedCamera?.cameraId || "cam_1",
-    });
-  };
-
+  // 🎥 Fake frame sender
   useEffect(() => {
-    const interval = setInterval(sendFrame, 1000);
+    if (!selectedCamera) return;
+
+    const interval = setInterval(() => {
+      socket.emit("frame", {
+        cameraId: selectedCamera.cameraId,
+      });
+    }, 4000);
+
     return () => clearInterval(interval);
   }, [selectedCamera]);
 
-  // ✅ Resolve alert
+  // actions
   const handleResolve = async (id) => {
-    try {
-      await resolveAlert(id, { actionTaken: "Handled" });
-
-      setAlerts((prev) =>
-        prev.map((a) =>
-          a.alertId === id ? { ...a, status: "resolved" } : a
-        )
-      );
-    } catch (err) {
-      console.error(err);
-    }
+    await resolveAlert(id, { actionTaken: "Handled" });
+    setAlerts((prev) =>
+      prev.map((a) =>
+        a.alertId === id ? { ...a, status: "resolved" } : a
+      )
+    );
   };
 
-  // ❌ Dismiss alert
   const handleDismiss = async (id) => {
-    try {
-      await dismissAlert(id, { reason: "False alarm" });
-
-      setAlerts((prev) =>
-        prev.map((a) =>
-          a.alertId === id ? { ...a, status: "dismissed" } : a
-        )
-      );
-    } catch (err) {
-      console.error(err);
-    }
+    await dismissAlert(id, { reason: "False alarm" });
+    setAlerts((prev) =>
+      prev.map((a) =>
+        a.alertId === id ? { ...a, status: "dismissed" } : a
+      )
+    );
   };
 
   return (
     <DashboardLayout title="Cameras">
-      
-      {/* 📊 Stats */}
-      <StatCard
-        icon={Camera}
-        label="Total Cameras"
-        value={cameras.length}
-      />
 
-      {/* 📸 Cameras Grid */}
-      <div className="grid md:grid-cols-3 gap-4 mt-6">
-        {cameras.map((cam) => (
-          <div
-            key={cam._id}
-            onClick={() =>
-                  setSelectedCamera((prev) =>
-                    prev?.cameraId === cam.cameraId ? null : cam
-                  )
-                }
-            className={`p-4 cursor-pointer rounded-xl border ${
-              selectedCamera?.cameraId === cam.cameraId
-                ? "border-purple-500 bg-[#1a1a24]"
-                : "bg-[#111118] border-white/5"
-            }`}
-          >
-            <p className="text-white font-semibold">
-              {cam.cameraId}
-              
-            </p>
-            <p className="text-gray-400 text-sm">
-              {cam.location}
-            </p>
-
-            <p
-              className={`text-xs mt-1 ${
-                cam.status === "active"
-                  ? "text-green-400"
-                  : "text-red-400"
-              }`}
-            >
-              ● {cam.status}
-            </p>
-          </div>
-        ))}
+      {/* 🔥 STATS */}
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard icon={Camera} label="Cameras" value={cameras.length} />
+        <StatCard icon={AlertTriangle} label="Alerts" value={alerts.length} />
+        <StatCard icon={Activity} label="Active Feed" value={selectedCamera ? 1 : 0} />
       </div>
 
-      {/* 🎥 LIVE CAMERA */}
-      <div className="mt-10">
-        <h2 className="text-white text-xl font-semibold mb-4">
-          🎥 Live Camera Feed
-        </h2>
+      <div className="grid lg:grid-cols-3 gap-6 mt-6">
 
-        {!selectedCamera ? (
-          <p className="text-gray-400">
-            Select a camera to view feed
-          </p>
-        ) : (
-          <div>
-            <p className="text-gray-400 mb-2">
-              {selectedCamera.cameraId} —{" "}
-              {selectedCamera.location}
-            </p>
+        {/* 📸 CAMERA LIST */}
+        <div className="bg-[#111118] p-4 rounded-xl border border-white/10">
+          <h3 className="text-white mb-3">Cameras</h3>
 
-            <video
-              ref={videoRef}
-              src="/test-video.mp4"
-              autoPlay
-              loop
-              muted
-              className="w-full max-w-xl rounded-xl border border-white/10"
-            />
-          </div>
-        )}
+          {cameras.map((cam, i) => (
+            <div
+              key={cam._id}
+              onClick={() => setSelectedCamera({ ...cam, index: i })}
+              className="p-3 mb-2 cursor-pointer border rounded bg-black/30 hover:bg-white/5"
+            >
+              <p className="text-white">{cam.cameraId}</p>
+              <p className="text-xs text-gray-400">{cam.location}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* 🎥 LIVE FEED */}
+        <div className="lg:col-span-2 bg-[#111118] p-4 rounded-xl border border-white/10">
+
+          {!selectedCamera ? (
+            <div className="h-[420px] flex items-center justify-center text-gray-400 border border-white/10 rounded">
+              Select a camera
+            </div>
+          ) : (
+            <div className="relative w-full h-[420px] rounded-xl overflow-hidden border border-white/10 bg-black">
+
+              {/* ✅ ALWAYS WORKING VIDEO */}
+              <video
+                key={selectedCamera.index}
+                src={VIDEO_FEEDS[selectedCamera.index % VIDEO_FEEDS.length]}
+                autoPlay
+                loop
+                muted
+                className="w-full h-full object-cover"
+              />
+
+              {/* 🔴 OVERLAY */}
+              <div className="absolute top-2 left-3 flex justify-between w-full pr-4 text-xs text-white">
+
+                <span className="bg-black/60 px-2 py-1 rounded">
+                  CAM {selectedCamera.cameraId} — {selectedCamera.location}
+                </span>
+
+                <span className="flex items-center gap-1 bg-black/60 px-2 py-1 rounded">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  REC
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 🚨 ALERTS */}
-      <div className="mt-10">
-        <h2 className="text-white text-xl font-semibold mb-4">
-          🚨 Recent Alerts
-        </h2>
+      <div className="mt-6 bg-[#111118] p-4 rounded-xl border border-white/10">
+        <h3 className="text-white mb-3">Live Alerts</h3>
 
-        {alerts.length === 0 ? (
-          <p className="text-gray-400 text-sm">
-            No alerts found
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {alerts.map((alert) => (
-              <div
-                key={alert.alertId}
-                className={`p-4 rounded-xl border ${
-                  alert.severity === "high"
-                    ? "bg-red-900/30 border-red-500"
-                    : alert.severity === "medium"
-                    ? "bg-yellow-900/30 border-yellow-500"
-                    : "bg-green-900/30 border-green-500"
-                }`}
+        {alerts.map((alert) => (
+          <div key={alert.alertId} className="p-3 mb-2 bg-black/30 rounded">
+
+            <p className="text-white">{alert.crimeType}</p>
+            <p className="text-xs text-gray-400">{alert.location}</p>
+
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => handleResolve(alert.alertId)}
+                className="text-xs px-2 py-1 bg-green-600 rounded"
               >
-                <div className="flex justify-between items-center">
-                  <p className="text-red-400 font-semibold flex items-center gap-2">
-                    🚨 {alert.crimeType}
-                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded">
-                      {alert.cameraId}
-                    </span>
-                  </p>
+                ✓
+              </button>
 
-                  <span className="text-xs px-2 py-1 bg-red-600 rounded">
-                    ALERT
-                  </span>
-                </div>
+              <button
+                onClick={() => handleDismiss(alert.alertId)}
+                className="text-xs px-2 py-1 bg-yellow-600 rounded"
+              >
+                ✕
+              </button>
+            </div>
 
-                <p className="text-gray-400 text-sm mt-1">
-                  {alert.location}
-                </p>
-
-                <p className="text-gray-500 text-xs">
-                  Severity: {alert.severity}
-                </p>
-
-                <p className="text-xs mt-1">
-                  Status:{" "}
-                  <span className="uppercase font-semibold">
-                    {alert.status}
-                  </span>
-                </p>
-
-                <div className="flex gap-2 mt-3">
-                  <button
-                    className="px-3 py-1 text-xs bg-green-600 rounded"
-                    onClick={() => handleResolve(alert.alertId)}
-                  >
-                    Resolve
-                  </button>
-
-                  <button
-                    className="px-3 py-1 text-xs bg-yellow-600 rounded"
-                    onClick={() => handleDismiss(alert.alertId)}
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            ))}
           </div>
-        )}
+        ))}
       </div>
 
     </DashboardLayout>

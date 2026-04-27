@@ -15,10 +15,25 @@ import Signup from "../pages/Signup";
 import CrimeAI from "../pages/CrimeAI2"
 import CrimeGlobe from "../components/layout/CrimeGlobe";
 import LiveCamera from "../pages/LiveCamera";
+import AdminCameras from "../pages/AdminCameras";
+import AdminDashboard from "../pages/AdminDashboard";
 
 function Private({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
+}
+
+
+function AdminRoute({ children }) {
+  const { user } = useAuth();
+
+  if (!user) return <Navigate to="/login" />;
+
+  if (user.role !== "admin") {
+    return <Navigate to="/dashboard" />; // 🔥 redirect non-admin
+  }
+
+  return children;
 }
 
 export default function AppRouter() {
@@ -51,6 +66,17 @@ export default function AppRouter() {
       
 
       <Route path="*" element={<Navigate to="/dashboard" />} />
-    </Routes>
+      <Route path="/admin/cameras" element= {<AdminRoute><AdminCameras /></AdminRoute>}/> 
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
+      
+      </Routes>
+      
   );
 }

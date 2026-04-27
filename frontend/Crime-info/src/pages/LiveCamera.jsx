@@ -1,83 +1,112 @@
 import { useEffect, useRef, useState } from "react";
+import DashboardLayout from "../components/layout/DashboardLayout";
 import { io } from "socket.io-client";
 
 const socket = io("http://localhost:5000");
 
 export default function LiveCamera() {
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  const [streaming, setStreaming] = useState(false);
   const [alerts, setAlerts] = useState([]);
 
-  // 🎥 Listen alerts
-  useEffect(() => {
-    socket.on("new-alert", (alert) => {
-      console.log("🚨 ALERT:", alert);
-
-      // add alert to UI
-      setAlerts((prev) => [alert, ...prev]);
+  // 🎥 START CAMERA
+  const startCamera = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
     });
 
-    return () => socket.off("new-alert");
-  }, []);
+    videoRef.current.srcObject = stream;
+    setStreaming(true);
+  };
 
-  // 📸 Send frames
+  // 📡 SEND FRAME TO BACKEND
   const sendFrame = () => {
+    const canvas = canvasRef.current;
     const video = videoRef.current;
-    if (!video) return;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const image = canvas.toDataURL("image/jpeg");
 
-    socket.emit("frame", {
-      image,
-      cameraId: "cam_1",
-    });
+    socket.emit("video-frame", image);
   };
 
+  // 🔁 LOOP EVERY 2s
   useEffect(() => {
-    const interval = setInterval(sendFrame, 1000);
+    if (!streaming) return;
+
+    const interval = setInterval(sendFrame, 2000);
     return () => clearInterval(interval);
+  }, [streaming]);
+
+  // 📥 RECEIVE ALERTS
+  useEffect(() => {
+    socket.on("crime-alert", (data) => {
+      setAlerts((prev) => [data, ...prev]);
+    });
+
+    return () => socket.off("crime-alert");
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1 style={{ color: "white" }}>CCTV Simulation</h1>
+    <DashboardLayout title="Live Camera Surveillance">
 
-      <video
-        ref={videoRef}
-        src="/test-video.mp4"
-        autoPlay
-        loop
-        muted
-        width="500"
-      />
+      <div className="grid lg:grid-cols-2 gap-6">
 
-      {/* 🚨 ALERT PANEL */}
-      <div style={{ marginTop: "20px" }}>
-        <h2 style={{ color: "red" }}>Alerts</h2>
+        {/* LEFT: CAMERA */}
+        <div className="bg-[#111118] p-4 rounded-xl">
 
-        {alerts.map((a, index) => (
-          <div
-            key={index}
-            style={{
-              background: "#111",
-              color: "white",
-              padding: "10px",
-              margin: "5px 0",
-              borderLeft: "5px solid red",
-            }}
+          <video
+            ref={videoRef}
+            autoPlay
+            className="w-full rounded"
+          />
+
+          <canvas
+            ref={canvasRef}
+            width="640"
+            height="480"
+            className="hidden"
+          />
+
+          <button
+            onClick={startCamera}
+            className="mt-4 bg-purple-600 px-4 py-2 rounded"
           >
-            <p><b>Type:</b> {a.crimeType}</p>
-            <p><b>Location:</b> {a.location}</p>
-            <p><b>Severity:</b> {a.severity}</p>
-          </div>
-        ))}
+            Start Camera
+          </button>
+        </div>
+
+        {/* RIGHT: ALERTS */}
+        <div className="bg-[#111118] p-4 rounded-xl">
+
+          <h3 className="text-white mb-3">🚨 Live Alerts</h3>
+
+          {alerts.length === 0 ? (
+            <p className="text-gray-400 text-sm">
+              No alerts yet
+            </p>
+          ) : (
+            alerts.map((a, i) => (
+              <div
+                key={i}
+                className="mb-3 p-3 bg-black/30 rounded"
+              >
+                <p className="text-white">{a.crimeType}</p>
+                <p className="text-xs text-gray-400">
+                  {a.severity}
+                </p>
+              </div>
+            ))
+          )}
+
+        </div>
       </div>
-    </div>
+
+    </DashboardLayout>
   );
 }

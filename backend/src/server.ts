@@ -10,20 +10,20 @@ const PORT = process.env.PORT || 5000;
 // ✅ Connect DB
 connectDB();
 
-// ✅ Create HTTP server (IMPORTANT)
+// ✅ Create HTTP server
 const httpServer = createServer(app);
 
-// ✅ Create Socket.IO server
+// ✅ Socket.IO
 const io = new Server(httpServer, {
   cors: {
     origin: "*",
   },
 });
 
-// ✅ Setup socket
+// ✅ Attach socket logic
 setupSocket(io);
 
 // ✅ Start server
 httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

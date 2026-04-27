@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import { getProfileApi } from "../api/auth";
+import { getProfileApi } from "../api/auth.api";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
